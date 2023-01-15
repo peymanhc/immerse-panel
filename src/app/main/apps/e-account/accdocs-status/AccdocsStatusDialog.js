@@ -1,0 +1,376 @@
+import React, {Component} from 'react';
+import {
+    TextField,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    FormControl,
+	FormControlLabel,
+	Checkbox,
+    Icon,
+    IconButton,
+    Typography,
+    Toolbar,
+    AppBar,
+    Divider,
+	withStyles,
+	CircularProgress,
+} from '@material-ui/core';
+import amber from '@material-ui/core/colors/amber';
+import red from '@material-ui/core/colors/red';
+import {FuseUtils} from '@fuse';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+//import moment from 'moment/moment';
+import _ from '@lodash';
+import * as Actions from '../store/actions';
+import classNames from 'classnames';
+import { withTranslate } from 'react-redux-multilingual';
+
+const newAccdocsStatusState = {
+    'id'       		: '',
+    'stcode'        : '',
+    'name'    		: '', 
+    'description'   : '',
+    'starred'  		: false,
+    'important'		: false,
+    'disable'  		: false,
+	'state' 		: '',
+	'type' 			: '',
+	'color' 		: '',
+	'order' 		: 0,	
+	'imgSrc'		: '',
+};
+
+
+
+const styles = theme => ({
+	hidden: {
+		display: 'none',
+	},
+    productImageItem        : {
+        transitionProperty      : 'box-shadow',
+        transitionDuration      : theme.transitions.duration.short,
+        transitionTimingFunction: theme.transitions.easing.easeInOut,
+        '&:hover'               : {
+            boxShadow                    : theme.shadows[5],
+        },
+        '&.featured'            : {
+            pointerEvents                      : 'none',
+            boxShadow                          : theme.shadows[3],
+        }
+    },	
+	uploadBtn:{
+		fontSize:12,
+	},
+	loading:{
+		marginLeft: theme.spacing.unit * 10
+	},	
+});
+
+class AccdocsStatusDialog extends Component {
+
+	constructor(props) {
+		super(props);
+		this.backgroundInputRef = React.createRef();
+		this.iconInputRef = React.createRef();
+	}
+  
+    state = {
+        form       : {...newAccdocsStatusState},
+		background: null,
+		icon: null
+    };
+
+    componentDidUpdate(prevProps, prevState, snapshot)
+    {
+        /**
+         * After Dialog Open
+         */
+        if ( !prevProps.accdocsStatusDialog.props.open && this.props.accdocsStatusDialog.props.open )
+        {
+            /**
+             * Dialog type: 'edit'
+             * Update State
+             */
+            if ( this.props.accdocsStatusDialog.type === 'edit' &&
+                this.props.accdocsStatusDialog.data &&
+                !_.isEqual(this.props.accdocsStatusDialog.data, prevState) )
+            {
+                this.setState({form: {...this.props.accdocsStatusDialog.data}});
+            }
+
+            /**
+             * Dialog type: 'new'
+             * Update State
+             */
+            if ( this.props.accdocsStatusDialog.type === 'new' &&
+                !_.isEqual(newAccdocsStatusState, prevState) )
+            {
+                this.setState({
+                    form: {
+                        ...newAccdocsStatusState,
+                        id: FuseUtils.generateGUID()
+                    }
+                });
+            }
+        }
+    }
+
+    handleChange = (event) => {
+        const form = _.set({...this.state.form}, event.target.name, event.target.type === 'checkbox' ? event.target.checked : event.target.value);
+        this.setState({form});
+    };
+
+    closeAccdocsStatusDialog = () => {
+        this.props.accdocsStatusDialog.type === 'edit' ? this.props.closeEditAccdocsStatusDialog() : this.props.closeNewAccdocsStatusDialog();
+    };
+
+    handleToggleImportant = () => {
+        this.setState({
+            form: {
+                ...this.state.form,
+                important: !this.state.form.important
+            }
+        });
+    };
+
+    handleToggleStarred = () => {
+        this.setState({
+            form: {
+                ...this.state.form,
+                starred: !this.state.form.starred
+            }
+        });
+    };
+
+    canBeSubmitted()
+    {
+        const {name} = this.state.form;
+        return (
+            name.length > 0
+        );
+    }
+		
+	addFiles = (event) => {
+		const file = event.target.files[0];
+		this.setState({form: {...this.state.form, 
+			[event.target.name] :{
+				url: URL.createObjectURL(file),
+				file				
+			}
+		}});
+	};
+	
+    render()
+    {  
+        const {accdocsStatusDialog, addAccdocsStatus, updateAccdocsStatus, removeAccdocsStatus, classes, translate} = this.props;
+        const {form} = this.state;
+
+        return (
+            <Dialog {...accdocsStatusDialog.props} onClose={this.closeAccdocsStatusDialog} fullWidth maxWidth="sm">
+
+                <AppBar position="static" elevation={1}>
+                    <Toolbar className="flex w-full">
+                        <Typography variant="subtitle1" color="inherit">
+                            {accdocsStatusDialog.type === 'new' ? translate('New_Accdocs_Status') : translate('Edit_Accdocs_Status')}
+                        </Typography>
+						<div>
+							<CircularProgress 
+								className={this.props.loading? classes.loading:classes.hidden} 
+								color="secondary"
+							/>
+						</div>							
+                    </Toolbar>
+                </AppBar>
+                <DialogContent classes={{root: "p-0"}}>
+
+                    <div className="mb-16">
+                        <div className="flex items-center justify-between p-12">
+                            <div className="flex items-center justify-start" aria-label="Toggle star">
+                                <IconButton onClick={this.handleToggleImportant}>
+                                    {form.important ? (
+                                        <Icon style={{color: red[500]}}>error</Icon>
+                                    ) : (
+                                        <Icon>error_outline</Icon>
+                                    )}
+                                </IconButton>
+
+                                <IconButton onClick={this.handleToggleStarred}>
+                                    {form.starred ? (
+                                        <Icon style={{color: amber[500]}}>star</Icon>
+                                    ) : (
+                                        <Icon>star_outline</Icon>
+                                    )}
+                                </IconButton>
+                            </div>
+                        </div>
+                        <Divider className="mx-24"/>
+                    </div>
+
+                    <div className="px-16 sm:px-24">
+                        
+
+                        <div className="flex">                                                                         
+                            <TextField
+                                className="mt-8 mb-16 mr-8"
+                                label={translate("Name")}
+                                autoFocus
+                                id="name"
+                                name="name"
+                                value={form.name}
+                                onChange={this.handleChange}
+                                required
+                                variant="outlined"
+                                fullWidth
+                            />
+                            <TextField
+                                className="mt-4 mb-16 mr-8"
+                                label={translate('Stcode')}  
+                                id="stcode"
+                                name="stcode"
+                                value={form.stcode}   
+                                onChange={this.handleChange}
+                                required
+                                variant="outlined"                                
+                              /> 
+                        </div>                 
+
+                    <div className="flex">   
+                        <FormControl className="mt-8 mb-16  mr-8" fullWidth>
+                            <TextField
+                                label={translate("Code_Color")}                               
+                                name="color"
+                                value={form.color}
+                                onChange={this.handleChange}                               
+                                variant="outlined"
+                            />
+                        </FormControl>	
+                        <FormControl className="mt-8 mb-16 mr-8" fullWidth>
+                            <TextField
+                                label={translate("Order_Status_Label")}
+                                id="order"
+                                name="order"
+                                value={form.order}
+                                onChange={this.handleChange}
+                                type="number"
+                                variant="outlined"
+                            />  
+                        </FormControl>  
+                    </div> 
+
+                        <FormControl className="mt-8 mb-16" fullWidth>
+                            <TextField
+                                label={translate("Description")}   
+                                name="description"
+                                multiline
+                                rows="2"
+                                value={form.description}
+                                onChange={this.handleChange}
+                                variant="outlined"
+                            />
+                        </FormControl>
+
+						<div className="mt-8 mb-16">
+							<input accept="image/*" className={classes.hidden} name="imgSrc"  
+								id="imgSrc" type="file" onChange={this.addFiles}
+							/>
+							<label htmlFor="imgSrc">
+								<Button variant="outlined" component="span" className={classes.uploadBtn}>
+									{translate("Choose_Image")}
+								</Button>
+							</label>									
+						</div>	
+						<div className="mt-8 mb-16">
+						{
+							(form.imgSrc && 
+								<div
+									className={
+										classNames(
+											classes.productImageItem,
+											"flex items-center justify-center relative w-128 h-128 rounded-4 mr-16 mb-16 overflow-hidden cursor-pointer")
+									}
+								>									
+									<img className="max-w-none w-auto h-full" 
+										src={typeof form.imgSrc === "object" ? form.imgSrc.url : form.imgSrc} 
+										alt="" 
+									/>
+								</div>
+							)										
+						}
+						</div>
+                        										
+						<FormControl className="mt-8 mb-16" fullWidth>
+							<FormControlLabel
+								control={
+									<Checkbox checked={form.disable} name="disable" onChange={this.handleChange} value="status" />
+								}
+								label={translate("Disabled")}
+							/>
+						</FormControl>							
+                    </div>
+
+                </DialogContent>
+
+                {accdocsStatusDialog.type === 'new' ? (
+                    <DialogActions className="justify-between pl-8 sm:pl-16">
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => {
+                                addAccdocsStatus(this.state.form);
+                            }}
+                            disabled={!this.canBeSubmitted()}
+                        >
+                            {translate("Add")}
+                        </Button>
+                    </DialogActions>
+                ) : (
+                    <DialogActions className="justify-between pl-8 sm:pl-16">
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => {  
+                                updateAccdocsStatus(this.state.form);
+                            }}
+                            disabled={!this.canBeSubmitted()}
+                        >
+                            {translate("Save")}
+                        </Button>
+                        <IconButton
+                            className="min-w-auto"
+                            onClick={() => {
+                                removeAccdocsStatus(this.state.form.id);
+                                this.closeAccdocsStatusDialog();
+                            }}
+                        >
+                            <Icon>delete</Icon>
+                        </IconButton>
+                    </DialogActions>
+                )}
+            </Dialog>
+        );
+    }
+}
+
+function mapDispatchToProps(dispatch)
+{
+    return bindActionCreators({
+        closeEditAccdocsStatusDialog: Actions.closeEditAccdocsStatusDialog,
+        closeNewAccdocsStatusDialog : Actions.closeNewAccdocsStatusDialog,
+        addAccdocsStatus            : Actions.addAccdocsStatus,
+        updateAccdocsStatus         : Actions.updateAccdocsStatus,
+        removeAccdocsStatus         : Actions.removeAccdocsStatus
+    }, dispatch);
+}
+
+function mapStateToProps({AccdocsStatusApp})
+{
+    return { 
+        accdocsStatusDialog	: AccdocsStatusApp.accdocsStatus.accdocsStatusDialog,
+		loading			: AccdocsStatusApp.accdocsStatus.loading,
+    }
+}
+
+export default withStyles(styles, {withTheme: true})(connect(mapStateToProps, mapDispatchToProps)(withTranslate(AccdocsStatusDialog)));

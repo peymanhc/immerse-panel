@@ -1,0 +1,7 @@
+.fuse {
+	direction: rtl !important;
+}
+
+.arrow {
+        transform: scaleX(-1);
+}

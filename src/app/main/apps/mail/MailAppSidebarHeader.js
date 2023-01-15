@@ -1,0 +1,58 @@
+import React, {Component} from 'react';
+import {Icon, MenuItem, TextField} from '@material-ui/core';
+import {FuseAnimate} from '@fuse';
+import { withTranslate } from 'react-redux-multilingual';
+
+class MailAppSidebarHeader extends Component {
+
+    state = {
+        selectedAccount: 'creapond'
+    };
+
+    onAccountChange = (ev) => {
+        this.setState({selectedAccount: ev.target.value});
+    };
+
+    accounts = {
+        'creapond'    : 'johndoe@creapond.com',
+        'withinpixels': 'johndoe@withinpixels.com'
+    };
+
+    render()
+    {
+		const {translate} = this.props;
+        return (
+            <div className="flex flex-col justify-center h-full p-24">
+
+                <div className="flex items-center flex-1">
+                    <FuseAnimate animation="transition.expandIn" delay={300}>
+                        <Icon className="mr-16 text-32">mail</Icon>
+                    </FuseAnimate>
+                    <FuseAnimate animation="transition.slideLeftIn" delay={300}>
+                        <span className="text-24">{translate('Mailbox')}</span>
+                    </FuseAnimate>
+                </div>
+
+                <FuseAnimate animation="transition.slideUpIn" delay={300}>
+                    <TextField
+                        id="account-selection"
+                        select
+                        label={this.state.selectedAccount}
+                        value={this.state.selectedAccount}
+                        onChange={this.onAccountChange}
+                        placeholder={translate('Select_Account')}
+                        margin="normal"
+                    >
+                        {Object.keys(this.accounts).map((key, value) => (
+                            <MenuItem key={key} value={key}>
+                                {this.accounts[key]}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </FuseAnimate>
+            </div>
+        );
+    }
+}
+
+export default withTranslate(MailAppSidebarHeader);
